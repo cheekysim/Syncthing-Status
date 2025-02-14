@@ -47,6 +47,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable debug logging"
+        },
+        "syncthing.gitPath": {
+          "type": "string",
+          "default": "git",
+          "description": "Path to Git executable"
         }
       }
     }

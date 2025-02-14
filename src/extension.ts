@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import axios from "axios";
+import { exec } from "child_process";
 
 let statusBarItem: vscode.StatusBarItem;
 let updateInterval: NodeJS.Timer | null = null;
@@ -51,28 +52,55 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
   context.subscriptions.push(statusBarItem);
 
-  // Replace the simple edit listener with debounced version
+  // Replace Git commit monitoring with comprehensive Git change monitoring
+  let lastGitState = "";
+  const checkGitChanges = async () => {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) return;
+
+    const config = vscode.workspace.getConfiguration("syncthing");
+    const gitPath = config.get<string>("gitPath") || "git";
+
+    for (const folder of workspaceFolders) {
+      // Check both HEAD and refs to catch all changes
+      exec(
+        `${gitPath} rev-parse HEAD && ${gitPath} symbolic-ref -q HEAD && ${gitPath} status --porcelain`,
+        { cwd: folder.uri.fsPath },
+        (error, stdout) => {
+          if (error) return;
+          const currentState = stdout.trim();
+          if (lastGitState && currentState !== lastGitState) {
+            // Git change detected, perform immediate check
+            const now = Date.now();
+            lastEditTime = now;
+            updateSyncStatus(config);
+
+            // Perform another check after 5 seconds
+            setTimeout(() => {
+              lastEditTime = Date.now();
+              updateSyncStatus(config);
+            }, 5000);
+          }
+          lastGitState = currentState;
+        }
+      );
+    }
+  };
+
+  // Check Git changes every 5 seconds
+  setInterval(checkGitChanges, 5000);
+  checkGitChanges(); // Initial check
+
+  // Replace the text document change listener with file save listener
   context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument(() => {
+    vscode.workspace.onDidSaveTextDocument(() => {
       const now = Date.now();
       lastEditTime = now;
-
-      // Cancel existing timeout if any
-      if (typeTimeout) {
-        clearTimeout(typeTimeout);
-      }
 
       // If it's been a while since last check, trigger immediate check
       if (now - lastCheckTime > ACTIVE_TIMEOUT) {
         updateSyncStatus(vscode.workspace.getConfiguration("syncthing"));
       }
-
-      // Set up delayed check
-      typeTimeout = setTimeout(() => {
-        if (Date.now() - lastCheckTime >= MIN_CHECK_INTERVAL) {
-          updateSyncStatus(vscode.workspace.getConfiguration("syncthing"));
-        }
-      }, 3000); // Wait 1 second after last keystroke
     })
   );
 
