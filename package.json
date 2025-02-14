@@ -1,0 +1,63 @@
+{
+  "name": "syncthing",
+  "displayName": "Syncthing Status",
+  "description": "Shows Syncthing sync status in VS Code",
+  "version": "0.1.0",
+  "publisher": "cheekysim",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:syncthing.openWebUI"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Syncthing",
+      "properties": {
+        "syncthing.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Syncthing API Key"
+        },
+        "syncthing.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:8384",
+          "description": "Syncthing API URL"
+        },
+        "syncthing.refreshInterval": {
+          "type": "number",
+          "default": 30000,
+          "description": "Refresh interval in milliseconds when idle"
+        },
+        "syncthing.activeInterval": {
+          "type": "number",
+          "default": 5000,
+          "description": "Refresh interval in milliseconds when actively syncing"
+        },
+        "syncthing.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.4.0"
+  }
+}
