@@ -4,6 +4,10 @@
   "description": "Shows Syncthing sync status in VS Code",
   "version": "0.1.0",
   "publisher": "cheekysim",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cheekysim/Syncthing-Status"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
