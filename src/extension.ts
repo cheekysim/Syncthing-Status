@@ -282,9 +282,7 @@ function updateStatusBarWithData({ statusResponse, folderResponse }: any) {
     statusBarItem.tooltip = `Syncing - In: ${formatBytes(
       currentInBytes
     )}, Out: ${formatBytes(currentOutBytes)}`;
-    statusBarItem.backgroundColor = new vscode.ThemeColor(
-      "statusBarItem.warningBackground"
-    );
+    statusBarItem.backgroundColor = undefined;
   } else {
     statusBarItem.text = "$(check) Syncthing";
     statusBarItem.tooltip = `Synced - In: ${formatBytes(
