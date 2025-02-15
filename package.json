@@ -2,7 +2,7 @@
   "name": "syncthing",
   "displayName": "Syncthing Status",
   "description": "Shows Syncthing sync status in VS Code",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "Euan Bell",
   "repository": {
     "type": "git",
