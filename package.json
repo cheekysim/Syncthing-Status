@@ -3,11 +3,12 @@
   "displayName": "Syncthing Status",
   "description": "Shows Syncthing sync status in VS Code",
   "version": "0.1.0",
-  "publisher": "cheekysim",
+  "publisher": "Euan Bell",
   "repository": {
     "type": "git",
     "url": "https://github.com/cheekysim/Syncthing-Status"
   },
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -47,6 +48,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable debug logging"
+        },
+        "syncthing.gitPath": {
+          "type": "string",
+          "default": "git",
+          "description": "Path to Git executable"
         }
       }
     }
