@@ -2,8 +2,15 @@ import * as vscode from "vscode";
 import axios from "axios";
 import { exec } from "child_process";
 
+declare const setTimeout: (
+  callback: (...args: any[]) => void,
+  ms: number
+) => any;
+declare const setInterval: (callback: () => void, ms: number) => any;
+declare const clearInterval: (id: any) => void;
+
 let statusBarItem: vscode.StatusBarItem;
-let updateInterval: NodeJS.Timer | null = null;
+let updateInterval: any = null;
 let outputChannel: vscode.OutputChannel;
 let isCurrentlyActive = false;
 
@@ -14,7 +21,7 @@ let lastEditTime = 0;
 let lastCheckTime = 0;
 let lastErrorTime = 0;
 let errorCount = 0;
-let typeTimeout: NodeJS.Timeout | null = null;
+let typeTimeout: any = null;
 let lastSuccessfulResponse: any = null;
 let lastConnectionStatus = true;
 let isSyncing = false;
@@ -34,11 +41,35 @@ export function activate(context: vscode.ExtensionContext) {
     1 // Priority to ensure visibility
   );
   statusBarItem.name = "Syncthing Status";
-  statusBarItem.tooltip = "Click to open Syncthing Web UI";
-  statusBarItem.command = "syncthing.openWebUI";
+  statusBarItem.tooltip = "Click to refresh Syncthing status";
+  statusBarItem.command = "syncthing.refresh";
 
-  // Register command to open Syncthing Web UI
+  // Register command to refresh Syncthing status
   let disposable = vscode.commands.registerCommand(
+    "syncthing.refresh",
+    async () => {
+      const config = vscode.workspace.getConfiguration("syncthing");
+
+      // Show refreshing indicator
+      const originalText = statusBarItem.text;
+      statusBarItem.text = "$(sync~spin) Refreshing...";
+      statusBarItem.tooltip = "Refreshing Syncthing status...";
+
+      // Perform multiple checks over 3 seconds
+      for (let i = 0; i < 3; i++) {
+        await updateSyncStatus(config);
+        if (i < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+
+      // Final status update
+      await updateSyncStatus(config);
+    }
+  );
+
+  // Register command to open Syncthing Web UI (secondary command)
+  let openWebUIDisposable = vscode.commands.registerCommand(
     "syncthing.openWebUI",
     () => {
       const config = vscode.workspace.getConfiguration("syncthing");
@@ -50,6 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(disposable);
+  context.subscriptions.push(openWebUIDisposable);
   context.subscriptions.push(statusBarItem);
 
   // Replace Git commit monitoring with comprehensive Git change monitoring
@@ -66,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
       exec(
         `${gitPath} rev-parse HEAD && ${gitPath} symbolic-ref -q HEAD && ${gitPath} status --porcelain`,
         { cwd: folder.uri.fsPath },
-        (error, stdout) => {
+        (error: any, stdout: any) => {
           if (error) return;
           const currentState = stdout.trim();
           if (lastGitState && currentState !== lastGitState) {
@@ -111,7 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Add configuration change listener
   context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
+    vscode.workspace.onDidChangeConfiguration((e: any) => {
       if (e.affectsConfiguration("syncthing")) {
         const newConfig = vscode.workspace.getConfiguration("syncthing");
         setUpdateInterval(newConfig, isCurrentlyActive);
@@ -136,8 +168,8 @@ function setUpdateInterval(
   }
 
   const interval = active
-    ? config.get<number>("activeInterval")
-    : config.get<number>("refreshInterval");
+    ? config.get<number>("activeInterval") ?? 5000
+    : config.get<number>("refreshInterval") ?? 15000;
 
   updateInterval = setInterval(() => updateSyncStatus(config), interval);
   isCurrentlyActive = active;

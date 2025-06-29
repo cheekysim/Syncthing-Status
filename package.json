@@ -16,11 +16,20 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:syncthing.openWebUI"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "syncthing.refresh",
+        "title": "Refresh Syncthing Status"
+      },
+      {
+        "command": "syncthing.openWebUI",
+        "title": "Open Syncthing Web UI"
+      }
+    ],
     "configuration": {
       "title": "Syncthing",
       "properties": {
