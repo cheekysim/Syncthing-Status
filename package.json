@@ -2,8 +2,8 @@
   "name": "syncthing",
   "displayName": "Syncthing Status",
   "description": "Shows Syncthing sync status in VS Code",
-  "version": "1.0.0",
-  "publisher": "Euan Bell",
+  "version": "1.1.0",
+  "publisher": "EuanBell",
   "repository": {
     "type": "git",
     "url": "https://github.com/cheekysim/Syncthing-Status"
