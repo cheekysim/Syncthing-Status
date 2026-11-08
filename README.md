@@ -25,10 +25,10 @@ Access these commands via the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
 
 - `Refresh Syncthing Status` - Manually refresh the sync status
 - `Open Syncthing Web UI` - Open the Syncthing web interface
+- `Set Syncthing API Key` - Securely save or remove your Syncthing API key
 
 ## Configuration
 
-- `syncthing.apiKey`: Your Syncthing API key
 - `syncthing.apiUrl`: Syncthing API URL (default: <http://localhost:8384>)
 - `syncthing.refreshInterval`: Update interval when idle in milliseconds (default: 15000)
 - `syncthing.activeInterval`: Update interval when syncing in milliseconds (default: 5000)
@@ -56,10 +56,14 @@ The extension intelligently monitors your workspace and adjusts its behavior:
 ## Getting Started
 
 1. Install the extension
-2. Configure your Syncthing API key in VS Code settings (`syncthing.apiKey`)
+2. Run `Set Syncthing API Key` from the Command Palette and enter your API key
 3. (Optional) Configure your Syncthing API URL if different from default
 4. (Optional) Adjust the refresh intervals to your preference
 5. Click the status bar item to manually refresh or use the command palette
+
+The API key is stored using VS Code's secret storage rather than in settings.
+If an existing `syncthing.apiKey` setting is present, the extension migrates it
+to secret storage and removes it from global and workspace settings on startup.
 
 ## Testing the Extension
 

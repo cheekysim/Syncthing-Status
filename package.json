@@ -28,16 +28,15 @@
       {
         "command": "syncthing.openWebUI",
         "title": "Open Syncthing Web UI"
+      },
+      {
+        "command": "syncthing.setApiKey",
+        "title": "Set Syncthing API Key"
       }
     ],
     "configuration": {
       "title": "Syncthing",
       "properties": {
-        "syncthing.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "Syncthing API Key"
-        },
         "syncthing.apiUrl": {
           "type": "string",
           "default": "http://localhost:8384",
