@@ -12,7 +12,10 @@ declare const clearInterval: (id: any) => void;
 let statusBarItem: vscode.StatusBarItem;
 let updateInterval: any = null;
 let outputChannel: vscode.OutputChannel;
+let secretStorage: vscode.SecretStorage;
 let isCurrentlyActive = false;
+
+const API_KEY_SECRET = "syncthing.apiKey";
 
 // Cache and state management
 let lastInBytes = 0;
@@ -32,7 +35,18 @@ const MIN_CHECK_INTERVAL = 2000;
 const MAX_ERROR_BACKOFF = 300000; // 5 minutes
 const ERROR_BACKOFF_FACTOR = 2;
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+  secretStorage = context.secrets;
+  try {
+    await migrateApiKey(context);
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Unable to migrate the Syncthing API key to secure storage: ${String(
+        error
+      )}`
+    );
+  }
+
   outputChannel = vscode.window.createOutputChannel("Syncthing Status");
   context.subscriptions.push(outputChannel);
 
@@ -80,8 +94,42 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  let setApiKeyDisposable = vscode.commands.registerCommand(
+    "syncthing.setApiKey",
+    async () => {
+      const apiKey = await vscode.window.showInputBox({
+        prompt: "Enter your Syncthing API key",
+        password: true,
+        ignoreFocusOut: true,
+        placeHolder: "Leave empty to remove the stored API key",
+      });
+
+      if (apiKey === undefined) {
+        return;
+      }
+
+      try {
+        if (apiKey.length === 0) {
+          await secretStorage.delete(API_KEY_SECRET);
+          vscode.window.showInformationMessage("Syncthing API key removed");
+        } else {
+          await secretStorage.store(API_KEY_SECRET, apiKey);
+          vscode.window.showInformationMessage(
+            "Syncthing API key saved securely"
+          );
+        }
+        await updateSyncStatus(vscode.workspace.getConfiguration("syncthing"));
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Unable to update the Syncthing API key: ${String(error)}`
+        );
+      }
+    }
+  );
+
   context.subscriptions.push(disposable);
   context.subscriptions.push(openWebUIDisposable);
+  context.subscriptions.push(setApiKeyDisposable);
   context.subscriptions.push(statusBarItem);
 
   // Replace Git commit monitoring with comprehensive Git change monitoring
@@ -184,9 +232,18 @@ async function updateSyncStatus(config: vscode.WorkspaceConfiguration) {
   }
   lastCheckTime = now;
 
-  const apiKey = config.get<string>("apiKey");
   const apiUrl = config.get<string>("apiUrl");
   const debug = config.get<boolean>("debug");
+
+  let apiKey: string | undefined;
+  try {
+    apiKey = await secretStorage.get(API_KEY_SECRET);
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Unable to access the Syncthing API key: ${String(error)}`
+    );
+    return;
+  }
 
   if (!apiKey) {
     statusBarItem.text = "$(warning) Syncthing";
@@ -280,6 +337,39 @@ async function updateSyncStatus(config: vscode.WorkspaceConfiguration) {
     );
     statusBarItem.show();
   }
+}
+
+async function migrateApiKey(context: vscode.ExtensionContext) {
+  const config = vscode.workspace.getConfiguration("syncthing");
+  const legacyApiKey = config.get<string>("apiKey");
+  const storedApiKey = await context.secrets.get(API_KEY_SECRET);
+
+  if (legacyApiKey && !storedApiKey) {
+    await context.secrets.store(API_KEY_SECRET, legacyApiKey);
+  }
+
+  if (!legacyApiKey) {
+    return;
+  }
+
+  const inspected = config.inspect<string>("apiKey");
+  if (inspected?.globalValue !== undefined) {
+    await config.update(
+      "apiKey",
+      undefined,
+      vscode.ConfigurationTarget.Global
+    );
+  }
+  if (inspected?.workspaceValue !== undefined) {
+    await config.update(
+      "apiKey",
+      undefined,
+      vscode.ConfigurationTarget.Workspace
+    );
+  }
+  vscode.window.showInformationMessage(
+    "Your Syncthing API key was migrated to secure storage."
+  );
 }
 
 function updateStatusBarWithData({ statusResponse, folderResponse }: any) {
